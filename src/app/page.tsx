@@ -7,7 +7,7 @@ const Page = () => {
     <div>
       <h1>Welcome to the Streaming Platform</h1>
       <StreamList />
-      <StreamForm />
+      <StreamForm />asd
       <GetStartedForm />
     </div>
   );
