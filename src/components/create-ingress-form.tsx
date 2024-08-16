@@ -27,12 +27,14 @@ const formSchema = z.object({
 export default function CreateIngressForm({
   slug,
 }: {
-  slug?: string | undefined;
+  slug?: string;
 }) {
   const [ingress, setIngress] = useState<IngressInfo | undefined>();
   const [roomSlug, setRoomSlug] = useState<string | undefined>(slug);
   const [urlCopied, setUrlCopied] = useState(false);
   const [keyCopied, setKeyCopied] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [retrying, setRetrying] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -43,13 +45,38 @@ export default function CreateIngressForm({
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    const ingressInfo = await createIngress(
-      values.roomSlug,
-      parseInt(values.ingressType)
-    );
+    const maxRetries = 3;
+    let attempts = 0;
+    setIsLoading(true);
 
-    setIngress(ingressInfo);
-    setRoomSlug(values.roomSlug);
+    while (attempts < maxRetries) {
+      try {
+        if (attempts > 0) setRetrying(true);
+
+        const ingressInfo = await createIngress(
+          values.roomSlug,
+          parseInt(values.ingressType)
+        );
+
+        setIngress(ingressInfo);
+        setRoomSlug(values.roomSlug);
+        form.reset(); // Optional: Reset form after submission
+        setIsLoading(false);
+        setRetrying(false);
+        break; // Break out of the loop if successful
+      } catch (error) {
+        attempts++;
+        if (error.response?.status === 429 && attempts < maxRetries) {
+          console.warn(`Rate limited. Retrying in ${attempts} seconds...`);
+          await new Promise((resolve) => setTimeout(resolve, attempts * 1000));
+        } else {
+          console.error("Error creating ingress:", error);
+          setIsLoading(false);
+          setRetrying(false);
+          break;
+        }
+      }
+    }
   };
 
   const onCopyUrl = () => {
@@ -64,7 +91,7 @@ export default function CreateIngressForm({
 
   return (
     <>
-      {!ingress && (
+      {!ingress ? (
         <div className="flex w-full flex-col justify-center space-y-6 sm:w-[420px] border p-8">
           <h1 className="text-xl font-medium">Create an ingress endpoint</h1>
           <Form {...form}>
@@ -120,14 +147,17 @@ export default function CreateIngressForm({
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="mt-2">
-                Submit
+              <Button type="submit" className="mt-2" disabled={isLoading}>
+                {isLoading
+                  ? retrying
+                    ? "Retrying..."
+                    : "Submitting..."
+                  : "Submit"}
               </Button>
             </form>
           </Form>
         </div>
-      )}
-      {ingress && (
+      ) : (
         <div className="mx-auto flex w-full flex-col justify-center space-y-4 border border-violet-500 p-8 sm:w-[420px]">
           <h2 className="text-md font-medium mb-2">
             Success! Use the following config:

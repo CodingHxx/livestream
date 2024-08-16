@@ -9,14 +9,14 @@ export const metadata: Metadata = {
 
 interface PageProps {
   searchParams: {
-    channel: string | undefined;
+    channel?: string;
   };
 }
 
 export default function SetupPage({ searchParams: { channel } }: PageProps) {
   return (
     <section className="container-sm mx-auto flex flex-1 flex-col items-center space-y-10 px-6 py-6 md:py-10">
-      <CreateIngressForm slug={channel} />
+      <CreateIngressForm slug={channel || ''} />
       <div className="w-full border-t" />
       <div className="max-w-[728px]">
         <h1 className="text-xl font-medium mb-4">
@@ -38,7 +38,7 @@ export default function SetupPage({ searchParams: { channel } }: PageProps) {
         <Image
           width={1200}
           height={600}
-          alt="OBS Studio settings window"
+          alt="Screenshot of OBS Studio settings window"
           src="https://user-images.githubusercontent.com/304392/225103865-c0c3accb-600f-411d-814e-8f6384784b62.png"
         />
         <p>

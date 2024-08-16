@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model about {
+  id        Int      @id @default(autoincrement())
+  content   String
+  pfp       String
+  age       Int?
+  banner    String
+  status    String
+  verified  Boolean
+  createdAt DateTime @default(now())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], map: "About_userId_fkey")
+
+  @@index([userId], map: "About_userId_fkey")
+}
+
+// model Stream {
+//   id        String   @id @default(cuid())
+//   title     String
+//   thumbnail String?  // Optional field
+//   Link      String
+//   userId    Int      // Change from String to Int
+//   User      User     @relation(fields: [userId], references: [id])
+// }
+model Stream {
+  id        Int      @id @default(autoincrement())
+  title     String
+  thumbnail String
+  Link      String  // Ensure this matches the field name used in your code
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  User User[]
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String
+  email     String   @unique(map: "User_email_key")
+  password  String
+  createdAt DateTime @default(now())
+  about     about[]
+  streams   Stream[] // Represents a one-to-many relationship with Stream
+}
+
+model Post {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String
+  postLink  String?
+  postImage String? 
+  createdAt DateTime @default(now())
+}
